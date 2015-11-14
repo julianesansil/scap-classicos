@@ -49,8 +49,7 @@ public class Preparador {
 		}
 	}
 
-	// De um conjunto de arquivos com varios n-grams, separa os n-grams por
-	// autor
+	// De um conjunto de arquivos com varios n-grams, separa os n-grams por autor
 	public Map<String, String> recuperarNGramsPorAutor(File dirBase, String prefixoAceito, String sufixoAceito, File arquivoParaRetirar) {
 		// {"autor", "listNGramsAutor"}
 		Map<String, String> nGramsPorAutor = new HashMap<String, String>();
@@ -72,7 +71,6 @@ public class Preparador {
 
 						// Atualiza os n-grams do autor
 						nGramsPorAutor.put(autor, listNGramsAutor.toString());
-
 					} catch (Exception e) {
 						logger.error(e);
 					}

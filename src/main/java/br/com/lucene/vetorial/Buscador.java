@@ -11,11 +11,16 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
@@ -38,66 +43,80 @@ public class Buscador {
 	// Implementa os métodos necessários para realizar buscas num índice
 	private IndexSearcher buscador;
 
-	
-	public Buscador(File dirIndice) {
+	// Representa a função de similaridade usada na busca
+	private Similarity similaridade;
+
+	public Buscador(File dirIndice, Similarity similaridade) {
+		logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
 		this.dirIndice = dirIndice;
+		this.similaridade = similaridade;
 		this.configurarBuscador();
 	}
 
 	public void configurarBuscador() {
 		try {
-			logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
 			dirIndiceEmMemoria = new SimpleFSDirectory(dirIndice);
-
 			// A separação dos termos é feita através dos espaços em branco do texto
 			analisador = new WhitespaceAnalyzer(Version.LUCENE_48);
-
-			leitor = DirectoryReader.open(dirIndiceEmMemoria);
-			buscador = new IndexSearcher(leitor);
-
-		} catch (Exception e) {
+		} catch (IOException e) {
 			logger.error(e);
 		}
 	}
-	
-	public String buscar(File arquivo) {
-		String conteudo = null;
-		
+
+	public String buscar(File arquivoConsulta) {
+		String conteudoConsulta = null;
+
 		try {
-			conteudo = new String(Files.readAllBytes(arquivo.toPath()), StandardCharsets.UTF_8);
+			conteudoConsulta = new String(Files.readAllBytes(arquivoConsulta.toPath()), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			logger.error(e);
 		}
 
-		return buscar(conteudo);
+		return buscar(conteudoConsulta);
 	}
 
-	public String buscar(String conteudo) {
+	public String buscar(String conteudoConsulta) {
 		String autorScap = "";
-		
+
 		try {
-			// Representa a consulta do usuário
-			QueryParser parser = new QueryParser(Version.LUCENE_48, "Texto", analisador);
-			conteudo = QueryParser.escape(conteudo);
-			Query consulta = parser.parse(conteudo);
-			
+			leitor = DirectoryReader.open(dirIndiceEmMemoria);
+			buscador = new IndexSearcher(leitor);
+			buscador.setSimilarity(similaridade);
+
+			Query query = criarQuery(conteudoConsulta);
 			// Realiza a busca e armazena o resultado em um TopDocs
-			TopDocs resultado = buscador.search(consulta, 5);
-			
+			TopDocs resultado = buscador.search(query, 1);
+
 			// Representa cada um dos documentos retornados na busca
 			for (ScoreDoc sd : resultado.scoreDocs) {
 				Document documento = buscador.doc(sd.doc);
-//				autorScap = documento.get("Caminho");
-//				logger.info("Caminho: " + documento.get("Caminho"));
-//				logger.info("Pontuação: " + sd.score);
+				autorScap = documento.get("autorArquivo");
+				//logger.info("Pontuação: " + sd.score);
 			}
 
 			leitor.close();
 		} catch (Exception e) {
 			logger.error(e);
 		}
-		
+
 		return autorScap;
 	}
-	
+
+	public Query criarQuery(String conteudoConsulta) throws ParseException {
+		BooleanQuery bQuery = new BooleanQuery();
+		BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);
+		// Guarda todas possibilidades de combinações de termos dos arquivos
+		bQuery.add(new MatchAllDocsQuery(), Occur.SHOULD);
+
+		// Representa o conteúdo a ser consultado (índice)
+		QueryParser parser = new QueryParser(Version.LUCENE_48, "conteudoIndice", analisador);
+		// Representa a consulta do usuário
+		conteudoConsulta = QueryParser.escape(conteudoConsulta);
+		Query query = parser.parse(conteudoConsulta);
+
+		// Adiciona a consulta à consulta geral
+		bQuery.add(query, Occur.MUST);
+		return bQuery;
+	}
+
 }

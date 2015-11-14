@@ -8,7 +8,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.search.similarities.DefaultSimilarity;
+import org.apache.lucene.search.similarities.Similarity;
 
+import br.com.lucene.Util;
 import br.com.lucene.vetorial.Buscador;
 import br.com.lucene.vetorial.Experimento;
 import br.com.lucene.vetorial.Indexador;
@@ -21,10 +24,13 @@ public class MainExperimento {
 	public static final String DIR_BASE = "S:/Dropbox/TCC/Codigo/util/n-grams/";
 
 	// Diretório dos arquivos a serem indexados
-	public static final String DIR_BASE_PREPARADA = "S:/Dropbox/TCC/Codigo/util/n-grams-autor/";
+	public static final String DIR_BASE_PREPARADA = "S:/Dropbox/TCC/Codigo/util/vetorial-bm25/n-grams-autor/";
+	
+	// Diretório dos arquivos-consultas
+	public static final String DIR_ARQUIVOS_CONSULTA = "S:/Dropbox/TCC/Codigo/util/vetorial-bm25/vetorial-bm25/arquivos-consulta/";
 
 	// Diretório de armazenamento do índice
-	public static final String DIR_INDICE ="S:/Dropbox/TCC/Codigo/util/indices/";
+	public static final String DIR_INDICE = "S:/Dropbox/TCC/Codigo/util/indices/";
 
 	private static final String EXTENSAO_ACEITA = ".txt";
 
@@ -34,67 +40,73 @@ public class MainExperimento {
 
 	public static void main(String[] args) {
 		long inicio = System.currentTimeMillis();
+		iniciarVariaveis();
 
-		logger.info("**********************************************************************************");
 		logger.info("INÍCIO DA PREPARAÇÃO");
+		logger.info("**********************************************************************************");
 
 		preparar();
 
-		logger.info("FIM DA PREPARAÇÃO");
 		logger.info("**********************************************************************************");
-		logger.info(System.getProperty("line.separator"));
+		logger.info("FIM DA PREPARAÇÃO\n");
 
-		logger.info("**********************************************************************************");
 		logger.info("INÍCIO DA INDEXAÇÃO");
+		logger.info("**********************************************************************************");
 
 		indexar();
 
-		logger.info("FIM DA INDEXAÇÃO");
 		logger.info("**********************************************************************************");
-		logger.info(System.getProperty("line.separator"));
+		logger.info("FIM DA INDEXAÇÃO\n");
 
-		logger.info("**********************************************************************************");
 		logger.info("INÍCIO DA BUSCA");
-
-		buscar();
-
-		logger.info("FIM DA BUSCA");
 		logger.info("**********************************************************************************");
-		logger.info(System.getProperty("line.separator"));
 
-		testar(indexador);
+		testar();
+
+		logger.info("**********************************************************************************");
+		logger.info("FIM DA BUSCA\n");
 
 		long fim = System.currentTimeMillis();
 		logger.info("Tempo de execução: " + ((fim - inicio) / 1000) + "s");
 	}
 
-	public static void preparar() {
+	public static void iniciarVariaveis() {
 		preparador = new Preparador(new File(DIR_BASE_PREPARADA));
+		indexador = new Indexador(new File(DIR_INDICE));
+
+		// Função de similaridade escolhida = Vetorial
+		Similarity similaridade = new DefaultSimilarity();
+		// Função de similaridade escolhida = Okapi BM25
+		//Similarity similaridade = new BM25Similarity();
+
+		buscador = new Buscador(new File(DIR_INDICE), similaridade);
+	}
+
+	public static void preparar() {
+		Util.esvaziarDiretorio(new File(DIR_BASE_PREPARADA));
 		preparador.prepararDiretorio(new File(DIR_BASE), "", EXTENSAO_ACEITA, null);
 	}
 
 	public static void indexar() {
-		indexador = new Indexador(new File(DIR_INDICE));
 		indexador.indexarDiretorio(new File(DIR_BASE_PREPARADA), EXTENSAO_ACEITA);
 	}
 
 	public static void buscar() {
-		buscador = new Buscador(new File(DIR_INDICE));
+		String autorScap = "";
 
-		Path path = Paths.get(System.getProperty("user.home") + "/Desktop", "teste.txt");
-		String dados = null;
+		Path pathArquivo = Paths.get("S:/Dropbox/TCC/Codigo/util/", "teste.txt");
+		String conteudoConsulta = null;
 		try {
-			dados = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-			System.out.println("String do arquivo: " + dados);
+			conteudoConsulta = new String(Files.readAllBytes(pathArquivo), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			System.out.println("Não foi possível fazer a leitura do arquivo");
 		}
 
-		String parametro = dados;
-		buscador.buscar(parametro);
+		autorScap = buscador.buscar(conteudoConsulta);
+		logger.info("Autor: " + autorScap);
 	}
 
-	public static void testar(Indexador indexador) {
+	public static void testar() {
 		Experimento experimento = new Experimento(preparador, indexador, buscador);
 		experimento.testar(new File(DIR_BASE), new File(DIR_BASE_PREPARADA), EXTENSAO_ACEITA);
 	}

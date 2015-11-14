@@ -1,6 +1,7 @@
 package br.com.lucene.vetorial;
 
 import java.io.File;
+import java.text.DecimalFormat;
 
 import org.apache.log4j.Logger;
 
@@ -12,22 +13,27 @@ public class Experimento {
 	private Preparador preparador;
 	private Indexador indexador;
 	private Buscador buscador;
+	private DecimalFormat formatoDecimal;
 
 	public Experimento(Preparador preparador, Indexador indexador, Buscador buscador) {
 		this.preparador = preparador;
 		this.indexador = indexador;
 		this.buscador = buscador;
+		this.formatoDecimal = new DecimalFormat("0.000000");  
 	}
 
 	/**
 	 * Compara 1 arquivo-consulta com todos da base, e assim por diante...
-	 * Reindexando o perfil do autor desse arquivo antes da comparacao 
-	 * A fim de encontrar o autor desse arquivo
+	 * Reindexando o perfil do autor desse arquivo antes da comparacao A fim de
+	 * encontrar o autor desse arquivo
 	 */
 	public void testar(File dirBase, File dirBasePreparada, String sufixoAceito) {
+		logger.info("Diretorio da base preparada: " + dirBasePreparada.getAbsolutePath());
+		
 		// Informações do experimento
 		int numExperimentos = 0;
 		int numAcertos = 0;
+		float acuracia = 0;
 		
 		String autorVerdadeiro = "";
 		String autorScap = "";
@@ -37,7 +43,8 @@ public class Experimento {
 			autorVerdadeiro = Util.getNomeAutor(arquivoConsulta);
 			autorScap = "";
 
-			if (autorAnterior != "" && autorAnterior != autorVerdadeiro) {
+			if (!autorAnterior.equals("") && !autorAnterior.equals(autorVerdadeiro)) {
+				logger.info("Concatenando todos os n-grams do autor anterior: " + autorAnterior);
 				// Concatena todos os n-grams do autor anterior
 				preparador.prepararDiretorio(dirBase, autorAnterior, sufixoAceito, null);
 			}
@@ -50,9 +57,23 @@ public class Experimento {
 
 			// Faz a consulta/comparacao e sugere quem e o autor do arquivo
 			autorScap = buscador.buscar(arquivoConsulta);
-//			System.out.println("Autor: " + autorScap);
+    		autorAnterior = autorVerdadeiro;
+			
+			numExperimentos++;
+            if (autorVerdadeiro.equals(autorScap))
+                numAcertos++;
+            acuracia = (float) numAcertos/numExperimentos;
+
+		    logger.info("**********************************************************************************");
+			logger.info("Arquivo-consulta: " + arquivoConsulta);
+			logger.info("Autor verdadeiro: " + autorScap);
+			logger.info("Autor SCAP: " + autorScap + "\n");
+			
+			logger.info("Número de experimentos: " + numExperimentos);
+			logger.info("Número de acertos: " + numAcertos);
+			logger.info("Acurácia: " + formatoDecimal.format(acuracia));
+			logger.info("**********************************************************************************\n");
 		}
 
 	}
-
 }

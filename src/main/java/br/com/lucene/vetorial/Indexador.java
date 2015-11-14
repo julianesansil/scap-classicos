@@ -34,12 +34,13 @@ public class Indexador {
 	private IndexWriterConfig config;
 
 	// Biblioteca que cria e mantém o índice
-	private IndexWriter writer;
+	private IndexWriter escritor;
 
 	// Biblioteca que extrai texto de diversos formatos conhecidos
 	private Tika tika;
 
 	public Indexador(File dirIndice) {
+		logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
 		this.dirIndice = dirIndice;
 		this.configurarIndexador();
 	}
@@ -53,32 +54,29 @@ public class Indexador {
 
 	public void configurarIndexador() {
 		try {
-			Util.esvaziarDiretorio(dirIndice);
-			logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
 			dirIndiceEmMemoria = new SimpleFSDirectory(dirIndice);
-
 			// A separação dos termos é feita através dos espaços em branco do texto
 			analisador = new WhitespaceAnalyzer(Version.LUCENE_48);
-
-			config = new IndexWriterConfig(Version.LUCENE_48, analisador);
-			// Inicializa o IndexWriter para gravação
-			writer = new IndexWriter(dirIndiceEmMemoria, config);
 		} catch (IOException e) {
 			logger.error(e);
 		}
 	}
 
 	public void indexarDiretorio(File dirBasePreparada, String sufixoAceito) {
-		for (File arquivo : Util.listarArquivosDiretorio(dirBasePreparada, "", sufixoAceito)) {
-			if (arquivo.isFile())
-				indexarArquivo(arquivo);
-			else
-				indexarDiretorio(arquivo, sufixoAceito);
-		}
+		Util.esvaziarDiretorio(dirIndice);
 
 		try {
-			writer.commit();
-//			writer.close();
+			config = new IndexWriterConfig(Version.LUCENE_48, analisador);
+			// Inicializa o IndexWriter para gravação
+			escritor = new IndexWriter(dirIndiceEmMemoria, config);
+
+			for (File arquivo : Util.listarArquivosDiretorio(dirBasePreparada, "", sufixoAceito)) {
+				if (arquivo.isFile())
+					indexarArquivo(arquivo);
+			}
+
+			escritor.commit();
+			escritor.close();
 		} catch (IOException e) {
 			logger.error(e);
 		}
@@ -95,18 +93,19 @@ public class Indexador {
 
 		try {
 			// Extrai o conteúdo do arquivo com o Tika
-			String textoExtraido = getTika().parseToString(arquivo);
+			String conteudoArquivo = getTika().parseToString(arquivo);
 
 			// Monta um Document para indexação
 			// Cada item indexado é um Document e contém uma coleção de campos
+			// Field.Store.YES: armazena uma cópia do campo índice
 			Document documento = new Document();
-			documento.add(new TextField("Caminho", arquivo.getAbsolutePath(), Store.YES));
-			// Field.Store.YES: armazena uma cópia do texto no índice
-			documento.add(new TextField("Texto", textoExtraido, Store.YES));
+			documento.add(new TextField("pathArquivo", arquivo.getAbsolutePath(), Store.YES));
+			documento.add(new TextField("autorArquivo", Util.getNomeAutor(arquivo), Store.YES));
+			documento.add(new TextField("conteudoIndice", conteudoArquivo, Store.YES));
 
 			// Adiciona o Document no índice
 			// Este só estará disponível para consulta após o commit
-			writer.addDocument(documento);
+			escritor.addDocument(documento);
 
 		} catch (Exception e) {
 			logger.error(e);
