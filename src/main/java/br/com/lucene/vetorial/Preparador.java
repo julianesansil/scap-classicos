@@ -42,7 +42,7 @@ public class Preparador {
 			String listNGramsAutor = nGramsPorAutor.get(autor);
 
 			// Remove os termos de 1 ocorrência da string
-			listNGramsAutor = removerTermos1Ocorrencia(listNGramsAutor);
+//			listNGramsAutor = removerTermos1Ocorrencia(listNGramsAutor);
 
 			String arquivo = dirBasePreparada + "/" + autor + sufixoAceito;
 

@@ -64,7 +64,7 @@ public class Experimento {
 
 		    logger.info("**********************************************************************************");
 			logger.info("Arquivo-consulta: " + arquivoConsulta);
-			logger.info("Autor verdadeiro: " + autorScap);
+			logger.info("Autor verdadeiro: " + autorVerdadeiro);
 			logger.info("Autor SCAP: " + autorScap + "\n");
 			
 			logger.info("Número de experimentos: " + numExperimentos);
