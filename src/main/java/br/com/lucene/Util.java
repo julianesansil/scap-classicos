@@ -12,8 +12,8 @@ public class Util {
 		return arquivo.getName().substring(0, 2);
 	}
 
-	public static void salvarArquivo(String pathArquivo, String conteudo) throws IOException {
-		FileWriter writer = new FileWriter(new File(pathArquivo));
+	public static void salvarArquivo(String arquivo, String conteudo) throws IOException {
+		FileWriter writer = new FileWriter(new File(arquivo));
 		PrintWriter saida = new PrintWriter(writer);
 		saida.println(conteudo);
 		saida.close();

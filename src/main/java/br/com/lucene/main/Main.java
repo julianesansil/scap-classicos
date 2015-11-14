@@ -25,12 +25,9 @@ public class Main {
 	// Diretório dos arquivos a serem indexados
 	public static final String DIR_BASE_PREPARADA = "S:/Dropbox/TCC/Codigo/util/vetorial-bm25/n-grams-autor/";
 
-	// Diretório dos arquivos-consultas
-	public static final String DIR_ARQUIVOS_CONSULTA = "S:/Dropbox/TCC/Codigo/util/vetorial-bm25/vetorial-bm25/arquivos-consulta/";
-	
 	// Diretório de armazenamento do índice
 	public static final String DIR_INDICE = "S:/Dropbox/TCC/Codigo/util/indices/";
-	
+
 	private static final String EXTENSAO_ACEITA = ".txt";
 
 	private static Preparador preparador;
@@ -76,7 +73,7 @@ public class Main {
 		// Função de similaridade escolhida = Vetorial
 		Similarity similaridade = new DefaultSimilarity();
 		// Função de similaridade escolhida = Okapi BM25
-		//Similarity similaridade = new BM25Similarity();
+		// Similarity similaridade = new BM25Similarity();
 
 		buscador = new Buscador(new File(DIR_INDICE), similaridade);
 	}

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.Tika;
@@ -38,11 +40,15 @@ public class Preparador {
 		// Salva, em arquivos nomeados com o nome do autor, os n-grams do autor
 		for (String autor : nGramsPorAutor.keySet()) {
 			String listNGramsAutor = nGramsPorAutor.get(autor);
-			String pathArquivo = dirBasePreparada + "/" + autor + sufixoAceito;
+
+			// Remove os termos de 1 ocorrência da string
+			listNGramsAutor = removerTermos1Ocorrencia(listNGramsAutor);
+
+			String arquivo = dirBasePreparada + "/" + autor + sufixoAceito;
 
 			try {
-				logger.info("Salvando o arquivo (n-grams/autor): " + pathArquivo);
-				Util.salvarArquivo(pathArquivo, listNGramsAutor);
+				// logger.info("Salvando o arquivo (n-grams/autor): " + arquivo);
+				Util.salvarArquivo(arquivo, listNGramsAutor);
 			} catch (IOException e) {
 				logger.error(e);
 			}
@@ -60,7 +66,7 @@ public class Preparador {
 
 			if (!arquivo.equals(arquivoParaRetirar)) {
 				if (arquivo.isFile()) {
-					//logger.info("Preparando o arquivo: " + arquivo);
+					// logger.info("Preparando o arquivo: " + arquivo);
 					autor = Util.getNomeAutor(arquivo);
 
 					try {
@@ -79,6 +85,33 @@ public class Preparador {
 		}
 
 		return nGramsPorAutor;
+	}
+
+	public String removerTermos1Ocorrencia(String conteudo) {
+		Map<String, Integer> conteudoIndexado = new HashMap<String, Integer>();
+		String conteudoSplit[] = conteudo.split(" ");
+		int frequenciaTermo;
+	
+		for (String termo : conteudoSplit) {
+			if (conteudoIndexado.get(termo) == null)
+				conteudoIndexado.put(termo, 1);
+			else {
+				frequenciaTermo = conteudoIndexado.get(termo);
+				conteudoIndexado.put(termo, ++frequenciaTermo);
+			}
+		}
+
+		for (String termo : conteudoIndexado.keySet()) {
+			if (conteudoIndexado.get(termo) == 1) {
+				try {
+					conteudo = conteudo.replaceAll("\\b" + termo + "\\b", "");
+				} catch (PatternSyntaxException e) {
+					conteudo = conteudo.replaceAll(Pattern.quote(termo), "");
+				}
+			}
+		}
+
+		return conteudo;
 	}
 
 }

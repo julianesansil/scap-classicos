@@ -22,11 +22,9 @@ public class Experimento {
 		this.formatoDecimal = new DecimalFormat("0.000000");  
 	}
 
-	/**
-	 * Compara 1 arquivo-consulta com todos da base, e assim por diante...
-	 * Reindexando o perfil do autor desse arquivo antes da comparacao A fim de
-	 * encontrar o autor desse arquivo
-	 */
+	// Compara 1 arquivo-consulta com todos da base, e assim por diante...
+	// Reindexando o perfil do autor desse arquivo antes da comparacao
+	// A fim de encontrar o autor desse arquivo
 	public void testar(File dirBase, File dirBasePreparada, String sufixoAceito) {
 		logger.info("Diretorio da base preparada: " + dirBasePreparada.getAbsolutePath());
 		

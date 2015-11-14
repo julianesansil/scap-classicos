@@ -40,7 +40,7 @@ public class Indexador {
 	private Tika tika;
 
 	public Indexador(File dirIndice) {
-		logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
+		// logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
 		this.dirIndice = dirIndice;
 		this.configurarIndexador();
 	}
@@ -83,13 +83,13 @@ public class Indexador {
 	}
 
 	private void indexarArquivo(File arquivo) {
-		StringBuffer msg = new StringBuffer();
-		msg.append("Indexando o arquivo: ");
-		msg.append(arquivo.getAbsoluteFile());
-		msg.append(", ");
-		msg.append(arquivo.length() / 1000);
-		msg.append("kb");
-		logger.info(msg);
+		// StringBuffer msg = new StringBuffer();
+		// msg.append("Indexando o arquivo: ");
+		// msg.append(arquivo.getAbsoluteFile());
+		// msg.append(", ");
+		// msg.append(arquivo.length() / 1000);
+		// msg.append("kb");
+		// logger.info(msg);
 
 		try {
 			// Extrai o conteúdo do arquivo com o Tika

@@ -91,7 +91,7 @@ public class Buscador {
 			for (ScoreDoc sd : resultado.scoreDocs) {
 				Document documento = buscador.doc(sd.doc);
 				autorScap = documento.get("autorArquivo");
-				//logger.info("Pontuação: " + sd.score);
+				// logger.info("Pontuação: " + sd.score);
 			}
 
 			leitor.close();
