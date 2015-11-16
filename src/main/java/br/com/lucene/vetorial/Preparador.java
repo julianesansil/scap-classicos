@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.Tika;
@@ -18,11 +16,15 @@ public class Preparador {
 	// Diretório de armazenamento da base preparada
 	private File dirBasePreparada;
 
+	// Delimitador dos termos das strings dos índices e consulta
+	private String delimitadorSeparacao;
+
 	// Biblioteca que extrai texto de diversos formatos conhecidos
 	private Tika tika;
 
-	public Preparador(File dirBasePreparada) {
+	public Preparador(File dirBasePreparada, String delimitadorSeparacao) {
 		this.dirBasePreparada = dirBasePreparada;
+		this.delimitadorSeparacao = delimitadorSeparacao;
 	}
 
 	public Tika getTika() {
@@ -42,7 +44,7 @@ public class Preparador {
 			String listNGramsAutor = nGramsPorAutor.get(autor);
 
 			// Remove os termos de 1 ocorrência da string
-//			listNGramsAutor = removerTermos1Ocorrencia(listNGramsAutor);
+			listNGramsAutor = removerTermos1Ocorrencia(listNGramsAutor);
 
 			String arquivo = dirBasePreparada + "/" + autor + sufixoAceito;
 
@@ -61,17 +63,17 @@ public class Preparador {
 		Map<String, String> nGramsPorAutor = new HashMap<String, String>();
 
 		for (File arquivo : Util.listarArquivosDiretorio(dirBase, prefixoAceito, sufixoAceito)) {
-			String autor = "";
+			String autor = Util.getNomeAutor(arquivo);
 			StringBuffer listNGramsAutor = new StringBuffer();
 
+			if (nGramsPorAutor.get(autor) == null)
+				nGramsPorAutor.put(autor, listNGramsAutor.toString());
 			if (!arquivo.equals(arquivoParaRetirar)) {
 				if (arquivo.isFile()) {
 					// logger.info("Preparando o arquivo: " + arquivo);
-					autor = Util.getNomeAutor(arquivo);
 
 					try {
-						if (nGramsPorAutor.get(autor) != null)
-							listNGramsAutor.append(nGramsPorAutor.get(autor));
+						listNGramsAutor.append(nGramsPorAutor.get(autor));
 						// Extrai o conteúdo do arquivo com o Tika
 						listNGramsAutor.append(getTika().parseToString(arquivo));
 
@@ -88,10 +90,12 @@ public class Preparador {
 	}
 
 	public String removerTermos1Ocorrencia(String conteudo) {
+		StringBuffer conteudoSemTermos1Ocorrencia = new StringBuffer();
+
 		Map<String, Integer> conteudoIndexado = new HashMap<String, Integer>();
 		String conteudoSplit[] = conteudo.split(" ");
 		int frequenciaTermo;
-	
+
 		for (String termo : conteudoSplit) {
 			if (conteudoIndexado.get(termo) == null)
 				conteudoIndexado.put(termo, 1);
@@ -102,16 +106,17 @@ public class Preparador {
 		}
 
 		for (String termo : conteudoIndexado.keySet()) {
-			if (conteudoIndexado.get(termo) == 1) {
-				try {
-					conteudo = conteudo.replaceAll("\\b" + termo + "\\b", "");
-				} catch (PatternSyntaxException e) {
-					conteudo = conteudo.replaceAll(Pattern.quote(termo), "");
+			if (conteudoIndexado.get(termo) != 1) {
+				frequenciaTermo = conteudoIndexado.get(termo);
+
+				for (int i = 0; i < frequenciaTermo; i++) {
+					conteudoSemTermos1Ocorrencia.append(termo);
+					conteudoSemTermos1Ocorrencia.append(delimitadorSeparacao);
 				}
 			}
 		}
 
-		return conteudo;
+		return conteudoSemTermos1Ocorrencia.toString();
 	}
 
 }

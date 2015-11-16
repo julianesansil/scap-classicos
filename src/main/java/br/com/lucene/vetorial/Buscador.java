@@ -7,7 +7,6 @@ import java.nio.file.Files;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -22,14 +21,10 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
 
 public class Buscador {
 	private static Logger logger = Logger.getLogger(Buscador.class);
-
-	// Diretório de armazenamento do índice
-	private File dirIndice;
 
 	// Representa o diretório do índice em memória
 	private Directory dirIndiceEmMemoria;
@@ -45,22 +40,15 @@ public class Buscador {
 
 	// Representa a função de similaridade usada na busca
 	private Similarity similaridade;
+	
+	// Delimitador dos termos das strings dos índices e consulta
+	private String delimitadorSeparacao;
 
-	public Buscador(File dirIndice, Similarity similaridade) {
-		logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
-		this.dirIndice = dirIndice;
+	public Buscador(Directory dirIndiceEmMemoria, Analyzer analisador, Similarity similaridade, String delimitadorSeparacao) {
+		this.dirIndiceEmMemoria = dirIndiceEmMemoria;
+		this.analisador = analisador;
 		this.similaridade = similaridade;
-		this.configurarBuscador();
-	}
-
-	public void configurarBuscador() {
-		try {
-			dirIndiceEmMemoria = new SimpleFSDirectory(dirIndice);
-			// A separação dos termos é feita através dos espaços em branco do texto
-			analisador = new WhitespaceAnalyzer(Version.LUCENE_48);
-		} catch (IOException e) {
-			logger.error(e);
-		}
+		this.delimitadorSeparacao = delimitadorSeparacao;
 	}
 
 	public String buscar(File arquivoConsulta) {
@@ -110,13 +98,30 @@ public class Buscador {
 
 		// Representa o conteúdo a ser consultado (índice)
 		QueryParser parser = new QueryParser(Version.LUCENE_48, "conteudoIndice", analisador);
+
 		// Representa a consulta do usuário
-		conteudoConsulta = QueryParser.escape(conteudoConsulta);
-		Query query = parser.parse(conteudoConsulta);
+		Query query = parser.parse(delimitarTermos(conteudoConsulta));
 
 		// Adiciona a consulta à consulta geral
 		bQuery.add(query, Occur.MUST);
 		return bQuery;
+	}
+
+	// Separa os termos da string pelo delimitador de separação e envolve-os com aspas ("")
+	// Método criado para que tab, LF, CR sejam considerados
+	public String delimitarTermos(String conteudoConsulta) {
+		// Escapa os caracteres especiais
+		conteudoConsulta = QueryParser.escape(conteudoConsulta);
+		
+		// Delimitação dos termos da consulta
+		String termos[] = conteudoConsulta.split(delimitadorSeparacao);
+		StringBuffer conteudoConsultaDelimitada = new StringBuffer();
+		for (String termo : termos) {
+			termo = "\"" + termo + "\"";
+			conteudoConsultaDelimitada.append(termo);
+		}
+		
+		return conteudoConsultaDelimitada.toString();
 	}
 
 }

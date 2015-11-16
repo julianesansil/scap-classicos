@@ -5,14 +5,12 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.tika.Tika;
 
@@ -39,10 +37,10 @@ public class Indexador {
 	// Biblioteca que extrai texto de diversos formatos conhecidos
 	private Tika tika;
 
-	public Indexador(File dirIndice) {
-		// logger.info("Diretorio do índice: " + dirIndice.getAbsolutePath());
+	public Indexador(File dirIndice, Directory dirIndiceEmMemoria, Analyzer analisador) {
 		this.dirIndice = dirIndice;
-		this.configurarIndexador();
+		this.dirIndiceEmMemoria = dirIndiceEmMemoria;
+		this.analisador = analisador;
 	}
 
 	public Tika getTika() {
@@ -50,16 +48,6 @@ public class Indexador {
 			tika = new Tika();
 		}
 		return tika;
-	}
-
-	public void configurarIndexador() {
-		try {
-			dirIndiceEmMemoria = new SimpleFSDirectory(dirIndice);
-			// A separação dos termos é feita através dos espaços em branco do texto
-			analisador = new WhitespaceAnalyzer(Version.LUCENE_48);
-		} catch (IOException e) {
-			logger.error(e);
-		}
 	}
 
 	public void indexarDiretorio(File dirBasePreparada, String sufixoAceito) {
@@ -83,13 +71,7 @@ public class Indexador {
 	}
 
 	private void indexarArquivo(File arquivo) {
-		// StringBuffer msg = new StringBuffer();
-		// msg.append("Indexando o arquivo: ");
-		// msg.append(arquivo.getAbsoluteFile());
-		// msg.append(", ");
-		// msg.append(arquivo.length() / 1000);
-		// msg.append("kb");
-		// logger.info(msg);
+		// logger.info("Indexando o arquivo: " + arquivo.getAbsoluteFile());
 
 		try {
 			// Extrai o conteúdo do arquivo com o Tika
